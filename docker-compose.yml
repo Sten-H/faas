@@ -9,7 +9,7 @@ services:
     ports:
       - "80:80"
     environment:
-      - DOCKER_API_VERSION=1.35
+      - DOCKER_API_VERSION=1.35  # docker client api will have version mismatch without this
   factorial:
     build:
       context: ./factorial
@@ -17,4 +17,12 @@ services:
       - ./factorial:/go/src/github.com/sten-H/faas/factorial
     labels:
       - "faas.name=factorial"
+      - "faas.port=8080"
+  ping:
+    build:
+      context: ./ping
+    volumes:
+      - ./ping:/go/src/github.com/sten-H/faas/ping
+    labels:
+      - "faas.name=ping"
       - "faas.port=8080"
