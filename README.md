@@ -1,5 +1,10 @@
 # faas
 
+## Run
+git clone https://github.com/Sten-H/faas.git
+
+cd faas && docker-compose up (should publish on localhost:80)
+
 ## Services
 
 ### Ping
@@ -19,7 +24,8 @@ Accessed through /lambda/factorial?n=5
 
 ## Issues
 
-* Right now http:// has to be included in ping address query
+* Flat project structure. Began with a flat structure to simplify docker-compose things as I learned it. Should modify it to reflect case specification.
+* Right now http:// has to be included in ping address query. Don't think that should be required.
 * Ping function only does one ping at the moment. Should use Pinger.RunLoop to ping for a given time maybe.
 
 ### Odd stuff
