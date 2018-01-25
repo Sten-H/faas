@@ -3,13 +3,16 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"encoding/json"
-	"strconv"
+	//"encoding/json"
+	//"strconv"
 	"github.com/gorilla/mux"
 	"math/big"
+	"strconv"
+	"encoding/json"
 )
 
-type Response struct {
+// FIXME there's some very odd behaviour here, if I change field name to all lower case it returns {}
+type factorialResponse struct {
 	FuncName   string
 	Value	string
 }
@@ -31,18 +34,18 @@ func funcHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	nParam := vars["n"]
 	n, err := strconv.Atoi(nParam)
-	if err != nil {  // FIXME this doesn't catch ?n=s for example, still get 200 OK
+	if err != nil {  // FIXME this doesn't catch "?n=s" query for example, still get 200 OK
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	result := factorial(int64(n))
-	data := Response{
+	data := factorialResponse{
 		FuncName:   "Factorial",
 		Value: result,
 	}
 	bytes, err := json.Marshal(data)
 	if err != nil {
-		fmt.Println("error:", err)
+		w.WriteHeader(http.StatusBadRequest)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(bytes)
