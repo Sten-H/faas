@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 )
 
-// FIXME there's some very odd behaviour here, if I change field name to all lower case it returns {}
 type factorialResponse struct {
 	FuncName   string
 	Value	string
@@ -31,6 +30,7 @@ func factorial (n int64) string {
 }
 
 func funcHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Responding to request") // FIXME this is used to see which factorial container responds
 	vars := mux.Vars(r)
 	nParam := vars["n"]
 	n, err := strconv.Atoi(nParam)
