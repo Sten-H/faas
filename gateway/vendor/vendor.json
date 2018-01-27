@@ -7,10 +7,22 @@
 			"revision": ""
 		},
 		{
-			"checksumSHA1": "agc4AFOveA4U7WRv5cjl1qPlUFs=",
-			"path": "faas/common",
-			"revision": "a3543172c9b8994a3f0ded68fc5a296dd7c2b401",
-			"revisionTime": "2018-01-24T15:32:45Z"
+			"checksumSHA1": "Ufu9fbb0hB4PJyYpcUw/7gnaR7w=",
+			"path": "faas/gateway",
+			"revision": "d55885931be978d481456cec507437f1466714ff",
+			"revisionTime": "2018-01-26T16:21:24Z"
+		},
+		{
+			"checksumSHA1": "oEpUpU8ASfBWIRGesd9fBG1ar40=",
+			"path": "github.com/Microsoft/go-winio",
+			"revision": "7da180ee92d8bd8bb8c37fc560e673e6557c392f",
+			"revisionTime": "2018-01-16T22:35:03Z"
+		},
+		{
+			"checksumSHA1": "Gj+xR1VgFKKmFXYOJMnAczC3Znk=",
+			"path": "github.com/docker/distribution/digestset",
+			"revision": "5cb406d511b7b9163bff9b6439072e4892e5ae3b",
+			"revisionTime": "2018-01-19T21:00:03Z"
 		},
 		{
 			"path": "github.com/docker/distribution/reference",
@@ -65,8 +77,16 @@
 			"revision": ""
 		},
 		{
+			"checksumSHA1": "c6lDGNwTm5mYq18IHP+lqYpk8xU=",
 			"path": "github.com/docker/go-connections/tlsconfig",
-			"revision": ""
+			"revision": "3ede32e2033de7505e6500d6c868c2b9ed9f169d",
+			"revisionTime": "2017-06-23T20:36:43Z"
+		},
+		{
+			"checksumSHA1": "wn2shNJMwRZpvuvkf1s7h0wvqHI=",
+			"path": "github.com/gogo/protobuf/proto",
+			"revision": "26de2f9a7d3b1826f275e7a97c8cad5080589426",
+			"revisionTime": "2018-01-21T16:00:31Z"
 		},
 		{
 			"checksumSHA1": "g/V4qrXjUGG9B+e3hB+4NAYJ5Gs=",
@@ -81,20 +101,46 @@
 			"revisionTime": "2018-01-20T07:58:19Z"
 		},
 		{
+			"checksumSHA1": "OFNit1Qx2DdWhotfREKodDNUwCM=",
 			"path": "github.com/opencontainers/go-digest",
-			"revision": ""
+			"revision": "279bed98673dd5bef374d3b6e4b09e2af76183bf",
+			"revisionTime": "2017-06-07T19:53:33Z"
 		},
 		{
+			"checksumSHA1": "ZGlIwSRjdLYCUII7JLE++N4w7Xc=",
+			"path": "github.com/opencontainers/image-spec/specs-go",
+			"revision": "577479e4dc273d3779f00c223c7e0dba4cd6b8b0",
+			"revisionTime": "2017-11-25T02:40:18Z"
+		},
+		{
+			"checksumSHA1": "jdbXRRzeu0njLE9/nCEZG+Yg/Jk=",
 			"path": "github.com/opencontainers/image-spec/specs-go/v1",
-			"revision": ""
+			"revision": "577479e4dc273d3779f00c223c7e0dba4cd6b8b0",
+			"revisionTime": "2017-11-25T02:40:18Z"
 		},
 		{
+			"checksumSHA1": "GtamqiJoL7PGHsN454AoffBFMa8=",
 			"path": "golang.org/x/net/context",
-			"revision": ""
+			"revision": "0ed95abb35c445290478a5348a7b38bb154135fd",
+			"revisionTime": "2018-01-24T06:08:02Z"
 		},
 		{
+			"checksumSHA1": "WHc3uByvGaMcnSoI21fhzYgbOgg=",
 			"path": "golang.org/x/net/context/ctxhttp",
-			"revision": ""
+			"revision": "0ed95abb35c445290478a5348a7b38bb154135fd",
+			"revisionTime": "2018-01-24T06:08:02Z"
+		},
+		{
+			"checksumSHA1": "r9l4r3H6FOLQ0c2JaoXpopFjpnw=",
+			"path": "golang.org/x/net/proxy",
+			"revision": "0ed95abb35c445290478a5348a7b38bb154135fd",
+			"revisionTime": "2018-01-24T06:08:02Z"
+		},
+		{
+			"checksumSHA1": "eQq+ZoTWPjyizS9XalhZwfGjQao=",
+			"path": "golang.org/x/sys/windows",
+			"revision": "ff2a66f350cefa5c93a634eadb5d25bb60c85a9c",
+			"revisionTime": "2018-01-26T08:34:12Z"
 		}
 	],
 	"rootPath": "faas/gateway"

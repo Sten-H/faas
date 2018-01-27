@@ -59,6 +59,7 @@ func funcHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {  // this doesn't trigger on things like strAdress = 5 which would have been nice
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, "Error: %s \n", err)
+		return
 	}
 	fmt.Printf("HOST: %s", u.Host)
 	resultChan := make(chan []Ping)
@@ -71,12 +72,13 @@ func funcHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	bytes, err := json.Marshal(pingResponse)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "Error: %s \n", err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	w.Write(bytes)
-	//fmt.Fprintln(w, result)
 }
 
 // example query: /lambda/ping?address=http://www.duckduckgo.com

@@ -16,7 +16,7 @@ type factorialResponse struct {
 	Value	string
 }
 
-// FIXME can't manage to send the big.Int in the response body, it returns as {}. Avoided by converting to string.
+// can't manage to send the big.Int in the response body, it returns as {}. Avoided by converting to string.
 func factorial (n int64) string {
 	if n < 0 {
 		return "-1" // Unsure how this should be handled
@@ -30,12 +30,13 @@ func factorial (n int64) string {
 }
 
 func funcHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Responding to request") // FIXME this is used to see which factorial container responds
+	fmt.Println("Responding to request")  // used to see which container responds during development
 	vars := mux.Vars(r)
 	nParam := vars["n"]
 	n, err := strconv.Atoi(nParam)
 	if err != nil {  // FIXME this doesn't catch "?n=s" query for example, still get 200 OK
 		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "Error: %s \n", err)
 		return
 	}
 	result := factorial(int64(n))
@@ -44,9 +45,12 @@ func funcHandler(w http.ResponseWriter, r *http.Request) {
 		Value: result,
 	}
 	bytes, err := json.Marshal(data)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+	if err != nil {  // Unsure when this would occur
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "Error: %s \n", err)
+		return
 	}
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(bytes)
 }

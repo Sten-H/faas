@@ -19,12 +19,10 @@ type routeInfo struct {
 }
 
 var routingTable = make(map[string]routeInfo)
-var routeLock = sync.Mutex{}
 
+// FIXME not thread safe
 func getFunction(funcName string) (routeInfo, error) {
-	routeLock.Lock()
 	data := routingTable[funcName]
-	routeLock.Unlock()
 	if data.name == "" {  // Zero value of name field indicates data struct is zero value as well
 		return routeInfo{}, errors.New("function does not exist in routing table")
 	}
@@ -33,6 +31,7 @@ func getFunction(funcName string) (routeInfo, error) {
 
 // FIXME right now it rebuilds the map entirely every run, pretty heavy handed. I do this for now as a simple
 // means to delete routes that no longer exist.
+// FIXME func not thread safe
 func populateRoutingTable() {
 	routingTable = make(map[string]routeInfo)  // Clear map
 	cli, err := client.NewEnvClient()
@@ -50,9 +49,7 @@ func populateRoutingTable() {
 		_, err := getFunction(funcName)
 		if funcName != "" && err != nil { // funcName is "" on gateway
 			//fmt.Printf("Putting name: %s port: %s", container.Labels["faas.name"], container.Labels["faas.port"])
-			routeLock.Lock()
 			routingTable[funcName] = routeInfo{ container.Labels["faas.name"], container.Labels["faas.port"]}
-			routeLock.Unlock()
 		}
 	}
 }
@@ -64,6 +61,7 @@ func scheduleRoutePopulation(msInterval time.Duration) {
 		for {
 			select {
 			case <- ticker.C:
+				//fmt.Println("Updating routing table...")
 				populateRoutingTable()
 			case <- quit:
 				ticker.Stop()
@@ -92,9 +90,10 @@ func gatewayRouter(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Function could not be reached")
 		return
 	}
+	// Gateways send response from inner service back to client
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(response.StatusCode) // Copy status code
 	body, _ := ioutil.ReadAll(response.Body)
+	w.WriteHeader(http.StatusOK)
 	w.Write(body)
 }
 
