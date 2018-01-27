@@ -12,14 +12,14 @@ import (
 )
 
 type pingResponse struct {
-	FuncName string
-	Values   []Ping
+	FuncName string	`json:"funcName"`
+	Value   []Ping `json:"value"`
 }
 
 type Ping struct {
-	Ip    string
-	Rtt   string
-	Error string
+	Ip    string	`json:"ip"`
+	Rtt   string	`json:"rtt"`
+	Error string	`json:"error"`
 }
  // FIXME as of right now "http://" has to be included in addr for a valid response
 func pingAddress(addr string, resultChan chan []Ping) {
@@ -40,16 +40,12 @@ func pingAddress(addr string, resultChan chan []Ping) {
 		result = append(result, data)
 		fmt.Printf("IP Addr: %s receive, RTT: %v\n", addr.String(), rtt)
 	}
-	p.OnIdle = func() {
-		resultChan <- result
-		fmt.Println("Ping finished")
-	}
-	// FIXME p.RunLoop should be used to ping multiple times
-	// https://godoc.org/github.com/tatsushid/go-fastping#Pinger.RunLoop
-	err = p.Run()
-	if err != nil {
-		resultChan <- []Ping{ {Ip: "", Rtt: "", Error: err.Error()} }
-	}
+	p.RunLoop()
+	ticker := time.NewTicker(time.Second * 5)
+	<- ticker.C
+	resultChan <- result
+	p.Stop()
+	fmt.Println("Ping finished")
 }
 
 func funcHandler(w http.ResponseWriter, r *http.Request) {
@@ -68,7 +64,7 @@ func funcHandler(w http.ResponseWriter, r *http.Request) {
 							 // for each request so blocking should be ok
 	pingResponse := pingResponse{
 		FuncName: "ping",
-		Values: result,
+		Value: result,
 	}
 	bytes, err := json.Marshal(pingResponse)
 	if err != nil {

@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"net/http"
-	//"encoding/json"
-	//"strconv"
 	"github.com/gorilla/mux"
 	"math/big"
 	"strconv"
@@ -12,8 +10,8 @@ import (
 )
 
 type factorialResponse struct {
-	FuncName   string
-	Value	string
+	FuncName   string	`json:"funcName"`
+	Value	string		`json:"value"`
 }
 
 // can't manage to send the big.Int in the response body, it returns as {}. Avoided by converting to string.
