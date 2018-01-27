@@ -18,12 +18,15 @@ type routeInfo struct {
 	port string  // Image label faas.port
 }
 
+// Routing table key is the path of function ex: /lambda/{pathName}, this path name is a label called
+// faas.path. I did this to sort of separate the pathName from the image name (which right now is pointed to by
+// faas.name label). So now if I'd like to change the path to a function I only need to change faas.path
 var routingTable = make(map[string]routeInfo)
 var routeLock = sync.Mutex{}
 
-func getFunction(funcName string) (routeInfo, error) {
+func getFunction(funcPath string) (routeInfo, error) {
 	routeLock.Lock()
-	data := routingTable[funcName]
+	data := routingTable[funcPath]
 	routeLock.Unlock()
 	if data.name == "" {  // Zero value of name field indicates data struct is zero value as well
 		return routeInfo{}, errors.New("function does not exist in routing table")
@@ -31,8 +34,7 @@ func getFunction(funcName string) (routeInfo, error) {
 	return data, nil
 }
 
-// FIXME right now it rebuilds the map entirely every run, pretty heavy handed. I do this for now as a simple
-// means to delete routes that no longer exist.
+// FIXME right now it rebuilds the map entirely every run, pretty heavy handed.
 func populateRoutingTable() {
 	routingTable = make(map[string]routeInfo)  // Clear map
 	cli, err := client.NewEnvClient()
@@ -46,12 +48,11 @@ func populateRoutingTable() {
 	}
 
 	for _, container := range containers {
-		funcName := container.Labels["faas.name"]
-		_, err := getFunction(funcName)
-		if funcName != "" && err != nil { // funcName is "" on gateway
-			//fmt.Printf("Putting name: %s port: %s", container.Labels["faas.name"], container.Labels["faas.port"])
+		funcPath := container.Labels["faas.path"]
+		_, err := getFunction(funcPath)
+		if funcPath != "" && err != nil { // funcName is not zero value and function exists
 			routeLock.Lock()
-			routingTable[funcName] = routeInfo{ container.Labels["faas.name"], container.Labels["faas.port"]}
+			routingTable[funcPath] = routeInfo{ container.Labels["faas.name"], container.Labels["faas.port"]}
 			routeLock.Unlock()
 		}
 	}

@@ -29,7 +29,6 @@ Accessed through /lambda/factorial?n=5
 to always be the same one (lets say factorial_3 out of 1-3). This could be because the request are so staggered that 
 factorial_3 is always available. Not sure how to try this out to be certain. I imagined this would be done under the hood
 by docker-compose.
-* routingTable is not thread safe right now. Should use lock.
 * Flat project structure. Began with a flat structure to simplify docker-compose things as I learned it. Should modify it to reflect case specification.
 * Right now http:// has to be included in ping address query. Don't think that should be required.
 * Ping function only does one ping at the moment. Should use Pinger.RunLoop to ping for a given time maybe.

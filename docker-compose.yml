@@ -18,6 +18,7 @@ services:
     labels:
       - "faas.name=factorial"
       - "faas.port=8080"
+      - "faas.path=factorial"
   ping:
     build:
       context: ./ping
@@ -26,3 +27,4 @@ services:
     labels:
       - "faas.name=ping"
       - "faas.port=8080"
+      - "faas.path=ping"

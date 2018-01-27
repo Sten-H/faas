@@ -7,12 +7,6 @@
 			"revision": ""
 		},
 		{
-			"checksumSHA1": "Ufu9fbb0hB4PJyYpcUw/7gnaR7w=",
-			"path": "faas/gateway",
-			"revision": "d55885931be978d481456cec507437f1466714ff",
-			"revisionTime": "2018-01-26T16:21:24Z"
-		},
-		{
 			"checksumSHA1": "oEpUpU8ASfBWIRGesd9fBG1ar40=",
 			"path": "github.com/Microsoft/go-winio",
 			"revision": "7da180ee92d8bd8bb8c37fc560e673e6557c392f",
