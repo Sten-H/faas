@@ -21,6 +21,7 @@ type Ping struct {
 	Rtt   string	`json:"rtt"`
 	Error string	`json:"error"`
 }
+
  // FIXME as of right now "http://" has to be included in addr for a valid response
 func pingAddress(addr string, resultChan chan []Ping) {
 	p := fastping.NewPinger()
@@ -29,7 +30,7 @@ func pingAddress(addr string, resultChan chan []Ping) {
 		fmt.Println(err)
 		resultChan <- []Ping{ {Ip: "", Rtt: "", Error: err.Error()} }
 	}
-	result := []Ping{}
+	var result []Ping
 	p.AddIPAddr(ra)
 	p.OnRecv = func(addr *net.IPAddr, rtt time.Duration) {
 		data := Ping{

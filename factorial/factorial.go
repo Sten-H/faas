@@ -14,7 +14,7 @@ type factorialResponse struct {
 	Value	string		`json:"value"`
 }
 
-// can't manage to send the big.Int in the response body, it returns as {}. Avoided by converting to string.
+// can't manage to send the big.Int in the response body, it returns as {}. Avoided by converting to string for now.
 func factorial (n int64) string {
 	if n < 0 {
 		return "-1" // Unsure how this should be handled
@@ -32,7 +32,7 @@ func funcHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	nParam := vars["n"]
 	n, err := strconv.Atoi(nParam)
-	if err != nil {  // FIXME this doesn't catch "?n=s" query for example, still get 200 OK
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, "Error: %s \n", err)
 		return
