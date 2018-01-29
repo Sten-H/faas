@@ -8,11 +8,13 @@ import (
 	"sync"
 	"time"
 	"fmt"
+	"strings"
 )
 
 type RouteInfo struct {
 	Name string // Image label faas.Name
 	Port string // Image label faas.port
+	Method string  // Image label faas.method
 }
 
 type RouteTable struct {
@@ -55,7 +57,12 @@ func (r *RouteTable) Populate() {
 		if err != nil || container.Labels["faas.Name"] == "gateway" {
 			continue
 		}
-		r.table[funcPath] = append(r.table[funcPath], RouteInfo{containerPath, container.Labels["faas.port"]})
+		r.table[funcPath] = append(r.table[funcPath],
+			RouteInfo{
+				containerPath,
+				container.Labels["faas.port"],
+				container.Labels["faas.method"],
+				})
 	}
 	r.lock.Unlock()
 }
@@ -87,13 +94,17 @@ func (r *RouteTable) ScheduleUpdates(msInterval time.Duration) {
 // Returns route info to container which will handle request
 // Right now this uses a very naive form of "load balancing" where the list of available containers is
 // treated as a queue and the returned path is taken from fron of queue and then put in back of queue.
-func (r *RouteTable) Get(imageName string) (RouteInfo, error) {
+func (r *RouteTable) Get(imageName string, method string) (RouteInfo, error) {
 	r.lock.Lock()
 	queue := r.table[imageName]
 	if len(queue) == 0 || queue[0].Name == "" {
 		return RouteInfo{}, errors.New("function does not exist in routing table")
 	}
+	// Check if request method matchtes function method
 	route := queue[0]
+	if strings.ToUpper(route.Method) != strings.ToUpper(method) {
+		return RouteInfo{}, errors.New("function does not exist in routing table")
+	}
 	queue = queue[1:]
 	queue = append(queue, route)
 	r.table[imageName] = queue

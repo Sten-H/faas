@@ -21,6 +21,7 @@ services:
       - "faas.name=factorial"
       - "faas.port=8080"
       - "faas.path=factorial"
+      - "faas.method=GET"
   ping:
     build:
       context: ./ping
@@ -30,3 +31,4 @@ services:
       - "faas.name=ping"
       - "faas.port=8080"
       - "faas.path=ping"
+      - "faas.method=GET"

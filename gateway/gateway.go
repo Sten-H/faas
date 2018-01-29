@@ -14,7 +14,7 @@ var routingTable handler.RouteTable
 func gatewayRouter(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	requestedFuncName := vars["requestedFunction"]
-	requestedFunc, err := routingTable.Get(requestedFuncName)
+	requestedFunc, err := routingTable.Get(requestedFuncName, r.Method)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Function does not exist")
@@ -38,7 +38,7 @@ func main() {
 	fmt.Println("STARTING GATEWAY")
 	routingTable = handler.New()
 	r := mux.NewRouter()
-	r.HandleFunc("/lambda/{requestedFunction}", gatewayRouter)
+	r.HandleFunc("/lambda/{requestedFunction}", gatewayRouter).Methods("GET", "POST", "PUT", "DELETE")
 	routingTable.Populate()
 	routingTable.ScheduleUpdates(10000)
 	http.ListenAndServe(":80", r)
