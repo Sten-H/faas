@@ -20,7 +20,8 @@ func gatewayRouter(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Function does not exist")
 		return
 	}
-	url := fmt.Sprintf("http://%s:%s?%s", requestedFunc.Name, requestedFunc.Port, r.URL.RawQuery)
+	fmt.Println("Am I here?")
+	url := fmt.Sprintf("http://%s:%s?%s", requestedFunc.PathName, requestedFunc.Port, r.URL.RawQuery)
 	fmt.Println("URL: " + url)
 	response, err := http.Get(url)
 	if err != nil {  // This error should be extremely unlikely but still possible I think
@@ -39,7 +40,6 @@ func main() {
 	routingTable = handler.New()
 	r := mux.NewRouter()
 	r.HandleFunc("/lambda/{requestedFunction}", gatewayRouter).Methods("GET", "POST", "PUT", "DELETE")
-	routingTable.Populate()
-	routingTable.ScheduleUpdates(10000)
+	routingTable.Init(5000)
 	http.ListenAndServe(":80", r)
 }
