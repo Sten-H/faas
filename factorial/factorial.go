@@ -14,7 +14,7 @@ type factorialResponse struct {
 	Value	string		`json:"value"`
 }
 
-// can't manage to send the big.Int in the response body, it returns as {}. Avoided by converting to string for now.
+// Will give factorial of supplied n, if n is less than 0, -1 will always be returned
 func factorial (n int64) string {
 	if n < 0 {
 		return "-1" // Unsure how this should be handled
@@ -34,7 +34,7 @@ func funcHandler(w http.ResponseWriter, r *http.Request) {
 	n, err := strconv.Atoi(nParam)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(w, "Error: %s \n", err)
+		fmt.Fprintln(w, "n must be an integer")
 		return
 	}
 	result := factorial(int64(n))
@@ -46,6 +46,7 @@ func funcHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {  // Unsure when this would occur
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Error: %s \n", err)
+		panic(err)
 		return
 	}
 	w.WriteHeader(http.StatusOK)

@@ -20,9 +20,8 @@ func gatewayRouter(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Function does not exist")
 		return
 	}
-	fmt.Println("Am I here?")
 	url := fmt.Sprintf("http://%s:%s?%s", requestedFunc.PathName, requestedFunc.Port, r.URL.RawQuery)
-	fmt.Println("URL: " + url)
+	fmt.Println("Routing to " + url)
 	response, err := http.Get(url)
 	if err != nil {  // This error should be extremely unlikely but still possible I think
 		w.WriteHeader(http.StatusInternalServerError)

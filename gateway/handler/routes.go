@@ -20,8 +20,8 @@ type RouteInfo struct {
 }
 
 type RouteTable struct {
-	table	map[string][]RouteInfo  // Key is function functionPath ex "lambda/{functionPath}?query=3
-									// functionPath is set in docker-compose label as faas.path
+	table	map[string][]RouteInfo  // Key is function function name ex "lambda/{functionName}?query=3
+									// functionName is set in docker-compose label as faas.name
 	lock	sync.Mutex
 }
 
@@ -30,13 +30,13 @@ func getContainerPath(c types.Container) (string, error) {
 	if len(c.Names) < 1 {  // Unsure when this would happen
 		return "", errors.New("container has no path")
 	}
-	// c.Names[0] is for example "/faas_factorial_1", "/" is removed with slice
+	// c.Names[0] is for example "/faas_factorial_1", "/" is removed with [1:] slice
 	return c.Names[0][1:], nil
 }
 
 // Returns true if container info is entered in table as RouteInfo
 func (r* RouteTable) routeExists(c types.Container) bool {
-	funcPath := c.Labels["faas.path"]
+	funcPath := c.Labels["faas.name"]
 	routes := r.table[funcPath]
 	for _, route := range routes {
 		if c.ID == route.ID {
@@ -54,10 +54,10 @@ func (r* RouteTable) addRoute(c types.Container) {
 		panic(err)
 		return
 	}
-	pathRoutes := r.table[c.Labels["faas.path"]]
+	pathRoutes := r.table[c.Labels["faas.name"]]
 	route := RouteInfo{path, c.Labels["faas.port"], c.Labels["faas.method"], c.ID,}
 	pathRoutes = append(pathRoutes, route)
-	r.table[c.Labels["faas.path"]] = pathRoutes
+	r.table[c.Labels["faas.name"]] = pathRoutes
 	fmt.Println("ROUTE ADDED")
 }
 
