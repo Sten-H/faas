@@ -9,7 +9,6 @@ import (
 	"time"
 	"fmt"
 	"strings"
-	"math"
 )
 
 type RouteInfo struct {
@@ -75,16 +74,13 @@ func (r* RouteTable) addNewRoutes() {
 	}
 }
 
-
-// Removes routes which ID exists in RouteTable but not in list of all containers from docker api.
-// This is horribly inefficient right now. What I'd like to do is to have a pointer in RouteInfo to container.State,
-// But for some reason container.State does not update to "exited" or "dead" when shut down. Looping through
-// containers and checking their status doesn't work either because exited containers won't get listed since they... don't exist?
+// Removes routes which ID exists in RouteTable but not in list of containers
 func (r* RouteTable) removeDeadRoutes() {
 	cli, _  := client.NewEnvClient()
 	containers, _ := cli.ContainerList(context.Background(), types.ContainerListOptions{})
 	for pathName, paths := range r.table {
-		for idx, route := range paths {
+		var activePaths []RouteInfo
+		for _, route := range paths {
 			found := false
 			for _, c := range containers {
 				if route.ID == c.ID {
@@ -92,15 +88,15 @@ func (r* RouteTable) removeDeadRoutes() {
 					break
 				}
 			}
-			if !found {
+			if found {
+				activePaths = append(activePaths, route)
+			} else {
 				fmt.Println("ROUTE REMOVED")
-				nextIdx := math.Min(float64(idx + 1), float64(len(r.table[pathName])))
-				r.table[pathName] = append(r.table[pathName][:idx], r.table[pathName][int(nextIdx):]...)
 			}
 		}
+		r.table[pathName] = activePaths
 	}
 }
-
 
 func New() RouteTable {
 	return RouteTable{}
@@ -112,7 +108,6 @@ func (r *RouteTable) Update() {
 	r.removeDeadRoutes()
 	r.addNewRoutes()
 	r.lock.Unlock()
-	fmt.Println("Routes updated")
 }
 
 // Calls RouteTable.Update in the interval given
