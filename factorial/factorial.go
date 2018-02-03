@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"strconv"
 	"encoding/json"
+	"log"
 )
 
 type factorialResponse struct {
@@ -33,6 +34,7 @@ func funcHandler(w http.ResponseWriter, r *http.Request) {
 	nParam := vars["n"]
 	n, err := strconv.Atoi(nParam)
 	if err != nil {
+		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, "n must be an integer")
 		return
@@ -44,9 +46,9 @@ func funcHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	bytes, err := json.Marshal(data)
 	if err != nil {  // Unsure when this would occur
+		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Error: %s \n", err)
-		panic(err)
 		return
 	}
 	w.WriteHeader(http.StatusOK)

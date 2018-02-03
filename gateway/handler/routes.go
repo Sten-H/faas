@@ -9,6 +9,7 @@ import (
 	"time"
 	"fmt"
 	"strings"
+	"log"
 )
 
 type RouteInfo struct {
@@ -49,8 +50,7 @@ func (r* RouteTable) routeExists(c types.Container) bool {
 func (r* RouteTable) addRoute(c types.Container) {
 	path, err := getContainerPath(c)
 	if err != nil {
-		fmt.Println("Unable to add route to table")
-		panic(err)
+		log.Println(err)
 		return
 	}
 	pathRoutes := r.table[c.Labels["faas.name"]]
@@ -64,9 +64,14 @@ func (r* RouteTable) addRoute(c types.Container) {
 func (r* RouteTable) addNewRoutes() {
 	cli, err := client.NewEnvClient()
 	if err != nil {
-		panic(err)
+		log.Println(err)
+		return
 	}
 	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{})
+	if err != nil {
+		log.Println(err)
+		return
+	}
 	for _, c := range containers {
 		if !r.routeExists(c) {
 			r.addRoute(c)
@@ -78,17 +83,14 @@ func (r* RouteTable) addNewRoutes() {
 func (r* RouteTable) removeDeadRoutes() {
 	cli, _  := client.NewEnvClient()
 	containers, _ := cli.ContainerList(context.Background(), types.ContainerListOptions{})
+	containerMap := make(map[string] bool) // Will use this map as a set basically
+	for _, c := range containers {
+		containerMap[c.ID] = true
+	}
 	for pathName, paths := range r.table {
 		var activePaths []RouteInfo
 		for _, route := range paths {
-			found := false
-			for _, c := range containers {
-				if route.ID == c.ID {
-					found = true
-					break
-				}
-			}
-			if found {
+			if containerMap[route.ID] {
 				activePaths = append(activePaths, route)
 			} else {
 				fmt.Println("ROUTE REMOVED")

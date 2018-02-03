@@ -8,6 +8,7 @@ import (
 	"net"
 	"time"
 	"encoding/json"
+	"log"
 )
 
 type pingResponse struct {
@@ -22,13 +23,13 @@ type pingResult struct {
 
 func pingAddress(host string, resultChan chan []pingResult, errChan chan error) {
 	p := fastping.NewPinger()
-	ipAdress, err := net.ResolveIPAddr("ip4:icmp", host) // get Ip
+	ipAddress, err := net.ResolveIPAddr("ip4:icmp", host) // get Ip
 	if err != nil {
 		errChan <- err
 		return
 	}
 	var result []pingResult
-	p.AddIPAddr(ipAdress)
+	p.AddIPAddr(ipAddress)
 	p.OnRecv = func(addr *net.IPAddr, rtt time.Duration) {
 		data := pingResult{
 			Ip:    addr.String(),
@@ -39,11 +40,10 @@ func pingAddress(host string, resultChan chan []pingResult, errChan chan error) 
 	}
 	p.RunLoop()
 	ticker := time.NewTicker(time.Second * 5)
-	<- ticker.C
+	<- ticker.C  // blocks until time has passed
 	resultChan <- result
 	ticker.Stop()
 	p.Stop()
-	fmt.Println("pingResult finished")
 }
 
 func funcHandler(w http.ResponseWriter, r *http.Request) {
@@ -59,6 +59,7 @@ func funcHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			bytes, err := json.Marshal(pingResponse)
 			if err != nil {
+				log.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				fmt.Fprintf(w, "Error: %s \n", err)
 			} else {
@@ -67,6 +68,7 @@ func funcHandler(w http.ResponseWriter, r *http.Request) {
 				w.Write(bytes)
 			}
 		case err := <-errChan:
+			log.Println(err)
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(w, "Error: %s \n", err)
 	}
