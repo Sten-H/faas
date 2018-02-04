@@ -34,18 +34,6 @@ func getContainerPath(c types.Container) (string, error) {
 	return c.Names[0][1:], nil
 }
 
-// Returns true if container info is entered in table as RouteInfo
-func (r* RouteTable) routeExists(c types.Container) bool {
-	funcPath := c.Labels["faas.name"]
-	routes := r.table[funcPath]
-	for _, route := range routes {
-		if c.ID == route.ID {
-			return true
-		}
-	}
-	return false
-}
-
 // Enter container info to into RouteTable as a RouteInfo struct
 func (r* RouteTable) addRoute(c types.Container) {
 	path, err := getContainerPath(c)
@@ -61,29 +49,23 @@ func (r* RouteTable) addRoute(c types.Container) {
 }
 
 // Checks against all containers and adds routes that do not already exist in RouteTable
-func (r* RouteTable) addNewRoutes() {
-	cli, err := client.NewEnvClient()
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{})
-	if err != nil {
-		log.Println(err)
-		return
+func (r* RouteTable) addNewRoutes(containers []types.Container) {
+	routeMap := make(map[string] bool)  // used as set
+	for _, paths := range r.table {
+		for _, route := range paths {
+			routeMap[route.ID] = true
+		}
 	}
 	for _, c := range containers {
-		if !r.routeExists(c) {
+		if !routeMap[c.ID] {
 			r.addRoute(c)
 		}
 	}
 }
 
 // Removes routes which ID exists in RouteTable but not in list of containers
-func (r* RouteTable) removeDeadRoutes() {
-	cli, _  := client.NewEnvClient()
-	containers, _ := cli.ContainerList(context.Background(), types.ContainerListOptions{})
-	containerMap := make(map[string] bool) // Will use this map as a set basically
+func (r* RouteTable) removeDeadRoutes(containers []types.Container) {
+	containerMap := make(map[string] bool) // used as set
 	for _, c := range containers {
 		containerMap[c.ID] = true
 	}
@@ -104,11 +86,21 @@ func New() RouteTable {
 	return RouteTable{}
 }
 
-// Prunes dead routes and adds new routes
+// Removes dead routes and adds new routes
 func (r *RouteTable) Update() {
+	cli, err  := client.NewEnvClient()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{})
+	if err != nil {
+		log.Println(err)
+		return
+	}
 	r.lock.Lock()
-	r.removeDeadRoutes()
-	r.addNewRoutes()
+	r.addNewRoutes(containers)
+	r.removeDeadRoutes(containers)
 	r.lock.Unlock()
 }
 
@@ -154,6 +146,6 @@ func (r *RouteTable) Get(funcPath string, method string) (RouteInfo, error) {
 // Initialises RouteTable by adding existing routes and scheduling updates in given interval
 func (r *RouteTable) Init(updateInterval time.Duration) {
 	r.table = make(map[string][]RouteInfo) // Init map
-	r.addNewRoutes()
+	r.Update()
 	r.ScheduleUpdates(5000)
 }
