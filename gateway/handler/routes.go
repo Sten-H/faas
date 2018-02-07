@@ -19,10 +19,52 @@ type RouteInfo struct {
 	ID       string
 }
 
+type FunctionInfo struct {
+	lock *sync.RWMutex  // Should never be accessed directly, use getLock()
+	routes []RouteInfo
+	currentIndex int
+}
+
+func (f* FunctionInfo) incIndex() {
+	f.currentIndex = (f.currentIndex + 1) % len(f.routes)
+}
+
+func (f* FunctionInfo) getLock() *sync.RWMutex {
+	if f.lock == nil {
+		f.lock = &sync.RWMutex{}
+	}
+	return f.lock
+}
+
+func (f* FunctionInfo) getNextRoute() (RouteInfo, error) {
+	if len(f.routes) <= f.currentIndex {
+		return RouteInfo{}, errors.New("function does not exist in routing table")
+	}
+	route := f.routes[f.currentIndex]
+	if strings.ToUpper(route.Method) != strings.ToUpper(route.Method) {
+		return RouteInfo{}, errors.New("function does not exist in routing table")
+	}
+	return route, nil
+}
+
+func (f* FunctionInfo) addRoute(c types.Container) {
+	path, err := getContainerPath(c)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	route := RouteInfo{path, c.Labels["faas.port"], c.Labels["faas.method"], c.ID,}
+	f.routes = append(f.routes, route)
+	fmt.Println("ROUTE ADDED")
+}
+
+func (f* FunctionInfo) setRoutes(routes []RouteInfo) {
+	f.routes = routes
+	f.currentIndex = f.currentIndex % len(f.routes)
+}
+
 type RouteTable struct {
-	table	map[string][]RouteInfo  // Key is function function name ex "lambda/{functionName}?query=3
-									// functionName is set in docker-compose label as faas.name
-	lock	sync.Mutex
+	table	map[string]FunctionInfo  // Key is function function name ex "lambda/{functionName}?query=3		// functionName is set in docker-compose label as faas.name
 }
 
 // Returns the unique path to container (used to route to it)
@@ -34,31 +76,24 @@ func getContainerPath(c types.Container) (string, error) {
 	return c.Names[0][1:], nil
 }
 
-// Enter container info to into RouteTable as a RouteInfo struct
-func (r* RouteTable) addRoute(c types.Container) {
-	path, err := getContainerPath(c)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	pathRoutes := r.table[c.Labels["faas.name"]]
-	route := RouteInfo{path, c.Labels["faas.port"], c.Labels["faas.method"], c.ID,}
-	pathRoutes = append(pathRoutes, route)
-	r.table[c.Labels["faas.name"]] = pathRoutes
-	fmt.Println("ROUTE ADDED")
-}
-
 // Checks against all containers and adds routes that do not already exist in RouteTable
 func (r* RouteTable) addNewRoutes(containers []types.Container) {
 	routeMap := make(map[string] bool)  // used as set
-	for _, paths := range r.table {
-		for _, route := range paths {
+	for _, funcInfo := range r.table {
+		funcInfo.lock.RLock()
+		for _, route := range funcInfo.routes {
 			routeMap[route.ID] = true
 		}
+		funcInfo.lock.RUnlock()
 	}
 	for _, c := range containers {
 		if !routeMap[c.ID] {
-			r.addRoute(c)
+			funcPath := c.Labels["faas.name"]
+			funcInfo := r.table[funcPath]
+			funcInfo.addRoute(c)
+			funcInfo.getLock().Lock()
+			r.table[funcPath] = funcInfo
+			funcInfo.getLock().Unlock()
 		}
 	}
 }
@@ -69,16 +104,22 @@ func (r* RouteTable) removeDeadRoutes(containers []types.Container) {
 	for _, c := range containers {
 		containerMap[c.ID] = true
 	}
-	for pathName, paths := range r.table {
-		var activePaths []RouteInfo
-		for _, route := range paths {
+	for pathName, funcInfo := range r.table {
+		lock := funcInfo.getLock()
+		lock.RLock()
+		var activeRoutes []RouteInfo
+		for _, route := range funcInfo.routes {
 			if containerMap[route.ID] {
-				activePaths = append(activePaths, route)
+				activeRoutes = append(activeRoutes, route)
 			} else {
 				fmt.Println("ROUTE REMOVED")
 			}
 		}
-		r.table[pathName] = activePaths
+		funcInfo.setRoutes(activeRoutes)
+		lock.RUnlock()
+		lock.Lock()
+		r.table[pathName] = funcInfo
+		lock.Unlock()
 	}
 }
 
@@ -98,10 +139,8 @@ func (r *RouteTable) Update() {
 		log.Println(err)
 		return
 	}
-	r.lock.Lock()
 	r.addNewRoutes(containers)
 	r.removeDeadRoutes(containers)
-	r.lock.Unlock()
 }
 
 // Calls RouteTable.Update in the interval given
@@ -122,30 +161,27 @@ func (r *RouteTable) ScheduleUpdates(msInterval time.Duration) {
 	}()
 }
 
-// Returns route info to container which will handle request
-// Treats list of routes as FIFO queue as a form of load balancing
+// Returns route which will handle request
 func (r *RouteTable) Get(funcPath string, method string) (RouteInfo, error) {
-	r.lock.Lock()
-	queue := r.table[funcPath]
-	if len(queue) == 0 || queue[0].PathName == "" {
-		r.lock.Unlock()
-		return RouteInfo{}, errors.New("function does not exist in routing table")
+	funcInfo := r.table[funcPath]
+	lock := funcInfo.getLock()
+	lock.RLock()
+	route, err := funcInfo.getNextRoute()
+	if err != nil {
+		lock.RUnlock()
+		return RouteInfo{}, err
 	}
-	route, updatedQueue := queue[0], queue[1:]
-	// Check if request method matchtes function method
-	if strings.ToUpper(route.Method) != strings.ToUpper(method) {
-		r.lock.Unlock()
-		return RouteInfo{}, errors.New("function does not exist in routing table")
-	}
-	updatedQueue = append(updatedQueue, route)
-	r.table[funcPath] = updatedQueue
-	r.lock.Unlock()
+	funcInfo.incIndex()
+	lock.RUnlock()
+	lock.Lock()
+	r.table[funcPath] = funcInfo
+	lock.Unlock()
 	return route, nil
 }
 
 // Initialises RouteTable by adding existing routes and scheduling updates in given interval
 func (r *RouteTable) Init(updateInterval time.Duration) {
-	r.table = make(map[string][]RouteInfo) // Init map
+	r.table = make(map[string]FunctionInfo) // Init map
 	r.Update()
-	r.ScheduleUpdates(5000)
+	r.ScheduleUpdates(updateInterval)
 }
